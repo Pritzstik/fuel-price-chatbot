@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fuel Price Chatbot</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem auto; max-width: 820px; padding: 0 1rem; }
+      .row { display: flex; gap: .75rem; margin-bottom: .75rem; flex-wrap: wrap; }
+      input, button { padding: .55rem; font-size: 1rem; }
+      input[type="text"] { flex: 1; min-width: 320px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+      th, td { border: 1px solid #ddd; padding: .5rem; text-align: left; }
+      .reply { margin-top: .75rem; padding: .75rem; background: #f8f8f8; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Fuel Price Chatbot</h1>
+
+    <div class="row">
+      <button id="locate">Use my location</button>
+      <input id="lat" type="number" step="any" placeholder="Latitude" />
+      <input id="lon" type="number" step="any" placeholder="Longitude" />
+      <input id="radius" type="number" step="1" value="10" placeholder="Radius km" />
+    </div>
+
+    <div class="row">
+      <input id="question" type="text" placeholder='Ask: "What is the cheapest diesel near me?"' />
+      <button id="ask">Ask</button>
+    </div>
+
+    <div id="reply" class="reply"></div>
+    <div id="mode"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Station</th>
+          <th>Fuel Type</th>
+          <th>Price</th>
+          <th>Last Updated (UTC)</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
