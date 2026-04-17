@@ -1,6 +1,7 @@
 import re
 
 from db import query_cheapest
+from llm_service import LLMClient
 
 SUPPORTED_FUEL_TYPES = ["unleaded", "premium", "diesel", "e10", "lpg"]
 
@@ -44,6 +45,13 @@ def answer_question(question: str, lat: float, lon: float, radius_km: float) -> 
     reply = (
         f"{lead}: {best['station']} has {best['fuel_type']} at {best['price']:.3f}. "
         "I've included more nearby options sorted by lowest price."
+    )
+    reply = LLMClient().generate_fuel_reply(
+        question=question,
+        fuel_type=fuel_type,
+        radius_km=radius_km,
+        results=formatted,
+        fallback_reply=reply,
     )
 
     return {"reply": reply, "results": formatted}
