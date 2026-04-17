@@ -87,13 +87,38 @@ class FuelFinderClient:
         except json.JSONDecodeError as exc:
             raise RuntimeError("Fuel Finder OAuth token endpoint returned invalid JSON.") from exc
 
-        token = payload.get("access_token")
+        token = self._extract_access_token(payload)
         if not token:
-            fields = ", ".join(sorted(payload.keys())) or "no fields"
-            raise RuntimeError(f"Fuel Finder OAuth token response did not include access_token. Returned fields: {fields}.")
+            fields = self._describe_response_fields(payload)
+            raise RuntimeError(
+                "Fuel Finder OAuth token response did not include access_token. "
+                f"Returned fields: {fields}."
+            )
 
         self._access_token = str(token)
         return self._access_token
+
+    def _extract_access_token(self, payload: dict) -> str | None:
+        for source in (payload, payload.get("data")):
+            if not isinstance(source, dict):
+                continue
+
+            token = self._first_value(
+                source,
+                ("access_token", "accessToken", "token", "bearer_token", "bearerToken"),
+            )
+            if token:
+                return str(token)
+
+        return None
+
+    def _describe_response_fields(self, payload: dict) -> str:
+        fields = ", ".join(sorted(payload.keys())) or "no fields"
+        data = payload.get("data")
+        if isinstance(data, dict):
+            data_fields = ", ".join(sorted(data.keys())) or "no fields"
+            fields = f"{fields}; data fields: {data_fields}"
+        return fields
 
     def _build_url(self, lat: float, lon: float, radius_km: float) -> str:
         if "fuelfinder.example.com" in self.base_url:
@@ -114,6 +139,10 @@ class FuelFinderClient:
         separator = "&" if "?" in endpoint else "?"
         return f"{endpoint}{separator}{params}"
 
+    def _safe_endpoint(self, url: str) -> str:
+        parsed = parse.urlparse(url)
+        return parse.urlunparse((parsed.scheme, parsed.netloc, parsed.path, "", "", ""))
+
     def _first_value(self, source: dict, keys: tuple[str, ...], default=None):
         for key in keys:
             if key in source and source[key] is not None:
@@ -128,7 +157,8 @@ class FuelFinderClient:
             with request.urlopen(req, timeout=self.timeout_seconds) as resp:
                 payload = json.loads(resp.read().decode("utf-8"))
         except error.HTTPError as exc:
-            raise RuntimeError(f"Fuel Finder API error: HTTP {exc.code}") from exc
+            endpoint = self._safe_endpoint(url)
+            raise RuntimeError(f"Fuel Finder API error: HTTP {exc.code} for {endpoint}") from exc
         except error.URLError as exc:
             reason = getattr(exc, "reason", exc)
             raise RuntimeError(
